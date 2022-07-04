@@ -1,0 +1,17 @@
+DECLARE
+    create_table VARCHAR2(4000)  := '
+CREATE GLOBAL TEMPORARY TABLE {Schema}.TEMP_NUM_ID
+(
+    ID_     NUMBER(12)
+) ON COMMIT PRESERVE ROWS';
+BEGIN
+    EXECUTE IMMEDIATE create_table;
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE = -955 THEN
+            NULL;
+        ELSE
+            RAISE;
+        END IF;
+END;
+/

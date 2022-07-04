@@ -1,8 +1,14 @@
 CREATE OR REPLACE PACKAGE {Schema}.UTIL_SYS_ETL IS
 
-  -- AUTHOR  : Abel Cheng
-  -- CREATED : 2022-04-25 15:51:56
-  -- PURPOSE : Simple ETL Spooler task processing
+
+  -- Simple ETL Spooler task processing
+  -- Original Author     : Abel Cheng
+  -- Original Repository : https://github.com/DataBooster/Simple-ETL-Spooler
+  -- Created : 2022-04-10 15:51:56
+  -- Notes   : This package requires to be customized.
+  --           Please replace all "{Schema}" with the actual schema name you are going to install into,
+  --           and replace the name of the parameter "inTheUserName" with the actual value of the UserNameReservedParameter
+  --           setting defined in your DbWebApi (https://github.com/DataBooster/DbWebApi#username) if you have.
 
 
 FUNCTION CREATE_BATCH
@@ -100,7 +106,17 @@ END UTIL_SYS_ETL;
 CREATE OR REPLACE PACKAGE BODY {Schema}.UTIL_SYS_ETL IS
 
 
-cApp_Key_Email  CONSTANT VARCHAR2(30)    := 'POLL_ETL_TASK_QUEUE';
+  -- Simple ETL Spooler task processing
+  -- Original Author     : Abel Cheng
+  -- Original Repository : https://github.com/DataBooster/Simple-ETL-Spooler
+  -- Created : 2022-04-10 15:51:56
+  -- Notes   : This package requires to be customized.
+  --           Please replace all "{Schema}" with the actual schema name you are going to install into,
+  --           and replace the name of the parameter "inTheUserName" with the actual value of the UserNameReservedParameter
+  --           setting defined in your DbWebApi (https://github.com/DataBooster/DbWebApi#username) if you have.
+
+
+cApp_Key_Etl  CONSTANT VARCHAR2(30)    := 'POLL_ETL_TASK_QUEUE';
 
 
 FUNCTION CREATE_BATCH
@@ -409,11 +425,11 @@ PROCEDURE POLL_TASK_QUEUE
 BEGIN
     UPDATE  {Schema}.UTIL_SYS_LAST_ACTIVE_STATUS a
     SET     a.LAST_TIMESTAMP    = SYSTIMESTAMP
-    WHERE   a.APP_KEY           = cApp_Key_Email;
+    WHERE   a.APP_KEY           = cApp_Key_Etl;
 
-    DELETE FROM {Schema}.TEMP_ID_NAME_DATE;
+    DELETE FROM {Schema}.TEMP_NUM_ID;
 
-    INSERT INTO {Schema}.TEMP_ID_NAME_DATE (ID_)
+    INSERT INTO {Schema}.TEMP_NUM_ID (ID_)
     SELECT  b.BATCH_ID
     FROM    {Schema}.UTIL_SYS_ETL_BATCH_STATUS    b
     WHERE   b.BATCH_STATUS      = 'READY_TO_RUN'
@@ -422,7 +438,7 @@ BEGIN
     UPDATE  {Schema}.UTIL_SYS_ETL_BATCH_STATUS    b
     SET     b.BATCH_STATUS      = 'RUNNING',
             b.TRIGGERED_TIME    = SYSDATE
-    WHERE   b.BATCH_ID IN (SELECT ID_ FROM {Schema}.TEMP_ID_NAME_DATE);
+    WHERE   b.BATCH_ID IN (SELECT ID_ FROM {Schema}.TEMP_NUM_ID);
 
     COMMIT;
 
@@ -447,7 +463,7 @@ BEGIN
     FROM
         {Schema}.VIEW_UTIL_SYS_ETL_TASK_QUEUE    q
         JOIN
-        {Schema}.TEMP_ID_NAME_DATE               b
+        {Schema}.TEMP_NUM_ID                     b
         ON q.BATCH_ID = b.ID_
     ORDER BY
         q.SCHEDULED_TIME,
@@ -663,7 +679,7 @@ PROCEDURE CLEAN_UP
 IS
 tExpiry_Date    DATE    := SYSDATE - GREATEST(inExpiry_Days, 1);
 BEGIN
-    DELETE FROM {Schema}.TEMP_NUMBER_ID;
+    DELETE FROM {Schema}.TEMP_NUM_ID;
 
     FOR bat IN (
         SELECT b.BATCH_ID, b.BATCH_STATUS FROM {Schema}.UTIL_SYS_ETL_BATCH_STATUS b
@@ -672,7 +688,7 @@ BEGIN
         IF bat.BATCH_STATUS  IN ('DRAFTING', 'READY_TO_RUN') THEN
             CANCEL_BATCH(bat.BATCH_ID);
         ELSE
-            INSERT INTO {Schema}.TEMP_NUMBER_ID (ID) VALUES (bat.BATCH_ID);
+            INSERT INTO {Schema}.TEMP_NUM_ID (ID_) VALUES (bat.BATCH_ID);
         END IF;
     END LOOP;
 
@@ -700,8 +716,8 @@ BEGIN
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
         JOIN
-        {Schema}.TEMP_NUMBER_ID              t
-        ON  b.BATCH_ID  = t.ID;
+        {Schema}.TEMP_NUM_ID                 t
+        ON  b.BATCH_ID  = t.ID_;
 
     IF SQL%NOTFOUND THEN
         RETURN;
@@ -755,16 +771,16 @@ BEGIN
     FROM
         {Schema}.UTIL_SYS_ETL_TASK_QUEUE     t
         JOIN
-        {Schema}.TEMP_NUMBER_ID              z
-        ON t.BATCH_ID  = z.ID;
+        {Schema}.TEMP_NUM_ID                 z
+        ON t.BATCH_ID  = z.ID_;
 
     IF SQL%FOUND THEN
         DELETE  FROM {Schema}.UTIL_SYS_ETL_TASK_QUEUE     t
-        WHERE   t.BATCH_ID  IN (SELECT ID FROM {Schema}.TEMP_NUMBER_ID);
+        WHERE   t.BATCH_ID  IN (SELECT ID_ FROM {Schema}.TEMP_NUM_ID);
     END IF;
 
     DELETE  FROM {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
-    WHERE   b.BATCH_ID  IN (SELECT ID FROM {Schema}.TEMP_NUMBER_ID);
+    WHERE   b.BATCH_ID  IN (SELECT ID_ FROM {Schema}.TEMP_NUM_ID);
 
     COMMIT;
 END CLEAN_UP;

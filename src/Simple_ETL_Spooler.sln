@@ -11,6 +11,47 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsConvertToOracleInput", "P
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETL_SpoolerService", "ETL_SpoolerService\ETL_SpoolerService.csproj", "{F40285DD-963C-4E51-B7AA-C2D5A16DD976}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "db-install", "db-install", "{D7834531-AA1B-473D-A0B3-48334DC444F5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Oracle11g", "Oracle11g", "{539DE35E-1395-42E1-A263-71FD4809B3DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1-Sequence", "1-Sequence", "{F3A70435-64A3-4725-B159-7216CA29BF27}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle11g\1-Sequence\01-UTIL_SYS_ETL_TASK_ID_SEQ.sql = db-install\Oracle11g\1-Sequence\01-UTIL_SYS_ETL_TASK_ID_SEQ.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2-Table", "2-Table", "{5B7D3417-DAFF-44D5-8CC3-83408C7850D8}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle11g\2-Table\01-UTIL_SYS_ETL_BATCH_STATUS.sql = db-install\Oracle11g\2-Table\01-UTIL_SYS_ETL_BATCH_STATUS.sql
+		db-install\Oracle11g\2-Table\02-UTIL_SYS_ETL_TASK_QUEUE.sql = db-install\Oracle11g\2-Table\02-UTIL_SYS_ETL_TASK_QUEUE.sql
+		db-install\Oracle11g\2-Table\03-UTIL_SYS_LAST_ACTIVE_STATUS.sql = db-install\Oracle11g\2-Table\03-UTIL_SYS_LAST_ACTIVE_STATUS.sql
+		db-install\Oracle11g\2-Table\04-UTIL_SYS_ETL_BATCH_STATUS_HIST.sql = db-install\Oracle11g\2-Table\04-UTIL_SYS_ETL_BATCH_STATUS_HIST.sql
+		db-install\Oracle11g\2-Table\05-UTIL_SYS_ETL_TASK_QUEUE_HIST.sql = db-install\Oracle11g\2-Table\05-UTIL_SYS_ETL_TASK_QUEUE_HIST.sql
+		db-install\Oracle11g\2-Table\06-TEMP_NUM_ID.sql = db-install\Oracle11g\2-Table\06-TEMP_NUM_ID.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3-View", "3-View", "{FB77C824-5ED0-4740-BE45-180BD33FCD82}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle11g\3-View\01-VIEW_UTIL_SYS_ETL_TASK_QUEUE.sql = db-install\Oracle11g\3-View\01-VIEW_UTIL_SYS_ETL_TASK_QUEUE.sql
+		db-install\Oracle11g\3-View\02-VIEW_UTIL_SYS_ETL_TASK_ALL.sql = db-install\Oracle11g\3-View\02-VIEW_UTIL_SYS_ETL_TASK_ALL.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "4-Package", "4-Package", "{45FCD69D-3BAD-4877-B1AD-5349A7EE07FA}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle11g\4-Package\01-UTIL_SYS_ETL.pck = db-install\Oracle11g\4-Package\01-UTIL_SYS_ETL.pck
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "5-Trigger", "5-Trigger", "{0AC9E788-FA47-4B0B-8C11-15F1298A09B8}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle11g\5-Trigger\01-TRG_UTIL_SYS_ETL_TASK_QUEUE_TY.trg = db-install\Oracle11g\5-Trigger\01-TRG_UTIL_SYS_ETL_TASK_QUEUE_TY.trg
+		db-install\Oracle11g\5-Trigger\02-TRG_UTIL_SYS_ETL_TASK_QUEUE_JS.trg = db-install\Oracle11g\5-Trigger\02-TRG_UTIL_SYS_ETL_TASK_QUEUE_JS.trg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "6-Grant", "6-Grant", "{AA23A80B-4716-46E1-9D2A-94401E886845}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle11g\6-Grant\01-grant.sql = db-install\Oracle11g\6-Grant\01-grant.sql
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +77,15 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{539DE35E-1395-42E1-A263-71FD4809B3DA} = {D7834531-AA1B-473D-A0B3-48334DC444F5}
+		{F3A70435-64A3-4725-B159-7216CA29BF27} = {539DE35E-1395-42E1-A263-71FD4809B3DA}
+		{5B7D3417-DAFF-44D5-8CC3-83408C7850D8} = {539DE35E-1395-42E1-A263-71FD4809B3DA}
+		{FB77C824-5ED0-4740-BE45-180BD33FCD82} = {539DE35E-1395-42E1-A263-71FD4809B3DA}
+		{45FCD69D-3BAD-4877-B1AD-5349A7EE07FA} = {539DE35E-1395-42E1-A263-71FD4809B3DA}
+		{0AC9E788-FA47-4B0B-8C11-15F1298A09B8} = {539DE35E-1395-42E1-A263-71FD4809B3DA}
+		{AA23A80B-4716-46E1-9D2A-94401E886845} = {539DE35E-1395-42E1-A263-71FD4809B3DA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9B1C7408-0F0F-4D3B-9219-7514E8646651}

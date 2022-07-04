@@ -20,7 +20,11 @@ BEGIN
     EXECUTE IMMEDIATE create_table;
 EXCEPTION
     WHEN OTHERS THEN
-        NULL;
+        IF SQLCODE = -955 THEN
+            NULL;
+        ELSE
+            RAISE;
+        END IF;
 END;
 /
 
