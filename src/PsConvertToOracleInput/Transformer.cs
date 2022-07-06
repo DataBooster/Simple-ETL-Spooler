@@ -143,13 +143,6 @@ namespace DataBooster.PsConvertToOracleInput
 
         public static string ToOracleInputJson(string inputJson, int resultSet, string mapJson, string mergeJson, bool overrideMerge, bool indent = false)
         {
-            //var inputResult = JsonSerializer.Deserialize<StoredProcedureResponse>(MustJson(inputJson), _jsonSerializerOptions) ?? new StoredProcedureResponse();
-            //var mapDict = JsonSerializer.Deserialize<IDictionary<string, string?>>(MustJson(mapJson), _jsonSerializerOptions).AsCaseInsensitive();
-            //var mergeDict = JsonSerializer.Deserialize<IDictionary<string, object?>>(MustJson(mergeJson), _jsonSerializerOptions) ?? new Dictionary<string, object?>(0);
-            //var transformed = inputResult.AsOracleInput(mapDict, resultSet).Merge(mergeDict, overrideMerge);
-
-            //return JsonSerializer.Serialize(transformed, new JsonSerializerOptions { WriteIndented = indent });
-
             var inputResult = JsonConvert.DeserializeObject<StoredProcedureResponse>(MustJson(inputJson)) ?? new StoredProcedureResponse();
             var transformed = ConvertToOracleInput(inputResult, resultSet, mapJson, mergeJson, overrideMerge);
 

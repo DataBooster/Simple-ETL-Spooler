@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("PsInvokeDb")]
 [assembly: AssemblyDescription("Powershell Cmdlet connects to an Oracle or SQL Server database and executes a stored procedure, function, or dynamic query generically.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Abel Cheng")]
+[assembly: AssemblyCompany("https://github.com/DataBooster/Simple-ETL-Spooler")]
 [assembly: AssemblyProduct("DataBooster.PsInvokeDb")]
 [assembly: AssemblyCopyright("Copyright © 2022 Abel Cheng")]
 [assembly: AssemblyTrademark("")]

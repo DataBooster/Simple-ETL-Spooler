@@ -10,7 +10,7 @@ namespace DataBooster.PsInvokeDb
         public static bool IsOracle(string dbServerName)
         {
             // TODO: Determine whether the database server is Oracle (or SQL Server) based on your organization's database server naming convention or a detailed list.
-            throw new NotImplementedException("The end product requires you to implement your custom code to determine whether the database server you enter is Oracle (otherwise SQL Server) based on your organization's database server naming convention or a detailed list.");
+            throw new NotImplementedException(@"The end product requires you to implement your custom code (src\PsInvokeDb\Customizer.cs) to determine whether the database server you enter is Oracle (otherwise SQL Server) based on your organization's database server naming convention or a detailed list.");
             // For example:
             // return dbServerName.StartsWith("ED", StringComparison.OrdinalIgnoreCase);
         }

@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Simple_ETL_Spooler")]
 [assembly: AssemblyDescription("Simple ETL Task Spooler Service")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Abel Cheng")]
+[assembly: AssemblyCompany("https://github.com/DataBooster/Simple-ETL-Spooler")]
 [assembly: AssemblyProduct("DataBooster.Simple_ETL_Spooler")]
 [assembly: AssemblyCopyright("Copyright © 2022 Abel Cheng")]
 [assembly: AssemblyTrademark("")]

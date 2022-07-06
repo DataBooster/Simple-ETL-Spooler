@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("PsInvokeMdx")]
 [assembly: AssemblyDescription("Powershell Cmdlet connects to an AnalysisServices and executes a MDX query generically.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Abel Cheng")]
+[assembly: AssemblyCompany("https://github.com/DataBooster/Simple-ETL-Spooler")]
 [assembly: AssemblyProduct("DataBooster.PsInvokeMdx")]
 [assembly: AssemblyCopyright("Copyright © 2022 Abel Cheng")]
 [assembly: AssemblyTrademark("")]

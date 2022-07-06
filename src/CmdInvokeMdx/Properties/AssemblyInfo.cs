@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PsConvertToOracleInput")]
-[assembly: AssemblyDescription("This Powershell Cmdlet converts the result set of one stored procedure into the input parameters of another stored procedure, with some column-to-parameter name mappings, merged with some additional parameters.")]
+[assembly: AssemblyTitle("CmdInvokeMdx")]
+[assembly: AssemblyDescription("Console command connects to an AnalysisServices and executes a MDX query generically.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("https://github.com/DataBooster/Simple-ETL-Spooler")]
-[assembly: AssemblyProduct("DataBooster.PsConvertToOracleInput")]
+[assembly: AssemblyProduct("DataBooster.CmdInvokeMdx")]
 [assembly: AssemblyCopyright("Copyright © 2022 Abel Cheng")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("670cd8b1-b64b-4b1c-a544-d6de43373b60")]
+[assembly: Guid("70680fe7-37e3-4f84-bb4b-283732c13290")]
 
 // Version information for an assembly consists of the following four values:
 //

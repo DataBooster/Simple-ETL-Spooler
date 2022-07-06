@@ -19,7 +19,7 @@ namespace DataBooster.PsInvokeDb
     [Alias("Call-DB")]
     public class InvokeDbCmdlet : PSCmdlet
     {
-        [Parameter(Mandatory = true, HelpMessage = "The database (Oracle or SQL Server) server to connect to. E.g. EDBDEV, SQL1DEV")]
+        [Parameter(Mandatory = true, HelpMessage = "The database (Oracle or SQL Server) server to connect to. E.g. EDBXYZ or SQLXYZ")]
         public string Server { get; set; }
 
         [Parameter(ParameterSetName = "StoredProcedure", Mandatory = true, ValueFromPipelineByPropertyName = true, HelpMessage = "The fully qualified name of the stored procedure to call. E.g. for Orale: \"SCHEMA.PACKAGE.PING_SP\", for SQL Server: \"db_name.dbo.ping_sp\"\n(--procedure option and --dynamic option are mutually exclusive)")]
