@@ -18,6 +18,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1-Sequence", "1-Sequence", "{F3A70435-64A3-4725-B159-7216CA29BF27}"
 	ProjectSection(SolutionItems) = preProject
 		db-install\Oracle11g\1-Sequence\01-UTIL_SYS_ETL_TASK_ID_SEQ.sql = db-install\Oracle11g\1-Sequence\01-UTIL_SYS_ETL_TASK_ID_SEQ.sql
+		db-install\Oracle11g\1-Sequence\02-UTIL_SYS_ETL_BATCH_ID_SEQ.sql = db-install\Oracle11g\1-Sequence\02-UTIL_SYS_ETL_BATCH_ID_SEQ.sql
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2-Table", "2-Table", "{5B7D3417-DAFF-44D5-8CC3-83408C7850D8}"
