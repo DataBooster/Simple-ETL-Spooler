@@ -35,6 +35,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3-View", "3-View", "{FB77C8
 	ProjectSection(SolutionItems) = preProject
 		db-install\Oracle11g\3-View\01-VIEW_UTIL_SYS_ETL_TASK_QUEUE.sql = db-install\Oracle11g\3-View\01-VIEW_UTIL_SYS_ETL_TASK_QUEUE.sql
 		db-install\Oracle11g\3-View\02-VIEW_UTIL_SYS_ETL_TASK_ALL.sql = db-install\Oracle11g\3-View\02-VIEW_UTIL_SYS_ETL_TASK_ALL.sql
+		db-install\Oracle11g\3-View\03-VIEW_UTIL_SYS_ETL_BATCH_STATUS.sql = db-install\Oracle11g\3-View\03-VIEW_UTIL_SYS_ETL_BATCH_STATUS.sql
+		db-install\Oracle11g\3-View\04-VIEW_UTIL_SYS_ETL_TASK_STATUS.sql = db-install\Oracle11g\3-View\04-VIEW_UTIL_SYS_ETL_TASK_STATUS.sql
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "4-Package", "4-Package", "{45FCD69D-3BAD-4877-B1AD-5349A7EE07FA}"

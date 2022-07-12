@@ -301,7 +301,7 @@ IS
 tBatch_ID   PLS_INTEGER;
 tTask_ID    PLS_INTEGER;
 BEGIN
-    tBatch_ID   := CREATE_BATCH(inComment, inScheduled_Time);
+    tBatch_ID   := CREATE_BATCH(inComment => inComment, inScheduled_Time => inScheduled_Time);
     tTask_ID    := ADD_TASK(tBatch_ID, FALSE,
                     inEXTRACT_TYPE, 
                     inEXTRACT_SOURCE,
