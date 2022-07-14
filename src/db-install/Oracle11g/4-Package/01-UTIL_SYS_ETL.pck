@@ -573,17 +573,16 @@ BEGIN
         t.TASK_COMMENT,
         t.CLIENT_ACCOUNT,
         t.ENTRY_TIME,
-        t.COMPLETED_TIME,
-        t.RUNTIME_ERROR
+        NVL(t.COMPLETED_TIME, SYSDATE)                                                          AS COMPLETED_TIME,
+        NVL(t.RUNTIME_ERROR, DECODE(tError_Cnt, 0, 'Cancelled', 'Cancelled by prior error'))    AS RUNTIME_ERROR
     FROM
         {Schema}.UTIL_SYS_ETL_TASK_QUEUE     t
-    WHERE   t.BATCH_ID  = inBatch_ID
-        AND t.COMPLETED_TIME    IS NOT NULL;
+    WHERE
+        t.BATCH_ID  = inBatch_ID;
 
     IF SQL%FOUND THEN
         DELETE FROM {Schema}.UTIL_SYS_ETL_TASK_QUEUE     t
-        WHERE   t.BATCH_ID  = inBatch_ID
-            AND t.COMPLETED_TIME    IS NOT NULL;
+        WHERE   t.BATCH_ID  = inBatch_ID;
     END IF;
 
     DELETE  FROM {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
