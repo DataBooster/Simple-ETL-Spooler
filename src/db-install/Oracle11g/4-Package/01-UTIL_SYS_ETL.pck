@@ -573,8 +573,8 @@ BEGIN
         t.TASK_COMMENT,
         t.CLIENT_ACCOUNT,
         t.ENTRY_TIME,
-        NVL(t.COMPLETED_TIME, SYSDATE)                                                          AS COMPLETED_TIME,
-        NVL(t.RUNTIME_ERROR, DECODE(tError_Cnt, 0, 'Cancelled', 'Cancelled by prior error'))    AS RUNTIME_ERROR
+        NVL(t.COMPLETED_TIME, SYSDATE)                                                  AS COMPLETED_TIME,
+        NVL(t.RUNTIME_ERROR, DECODE(tError_Cnt, 0, NULL, 'Cancelled by prior error'))   AS RUNTIME_ERROR
     FROM
         {Schema}.UTIL_SYS_ETL_TASK_QUEUE     t
     WHERE
