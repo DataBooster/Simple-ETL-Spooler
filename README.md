@@ -8,7 +8,7 @@ The ETL task queue is presented as a database table, each row is a specific ETL 
 1. Extraction Source Parts
    - Extract_Type
 
-     Can be one of the following types *(currently supported)*:
+     Can be one of the following types *(currently implemented)*:
 
      - 'SP': Stored Procedure
      - 'SQL': Dynamic selecy query
@@ -37,7 +37,7 @@ The ETL task queue is presented as a database table, each row is a specific ETL 
 2. Load Destination Parts
    - Load_Type
 
-     *(currently only supported)*:
+     *(currently only implemented)*:
 
      - 'SP': Stored Procedure *(Oracle now)*
 
