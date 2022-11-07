@@ -67,6 +67,48 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CmdInvokeMdx", "CmdInvokeMd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CmdConvertToOracleInput", "CmdConvertToOracleInput\CmdConvertToOracleInput.csproj", "{2F99C23D-E3C7-4169-B6F9-E97B6A446DCE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Oracle19c", "Oracle19c", "{0EB923F8-7E94-48B5-9398-3D8B5271B939}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1-Sequence", "1-Sequence", "{D229AD9D-27CB-47C0-9828-EBFEDB796575}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle19c\1-Sequence\01-UTIL_SYS_ETL_TASK_ID_SEQ.sql = db-install\Oracle19c\1-Sequence\01-UTIL_SYS_ETL_TASK_ID_SEQ.sql
+		db-install\Oracle19c\1-Sequence\02-UTIL_SYS_ETL_BATCH_ID_SEQ.sql = db-install\Oracle19c\1-Sequence\02-UTIL_SYS_ETL_BATCH_ID_SEQ.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2-Table", "2-Table", "{82DEACA0-2AF5-43F7-A8AE-3AACE42B6D73}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle19c\2-Table\01-UTIL_SYS_ETL_BATCH_STATUS.sql = db-install\Oracle19c\2-Table\01-UTIL_SYS_ETL_BATCH_STATUS.sql
+		db-install\Oracle19c\2-Table\02-UTIL_SYS_ETL_TASK_QUEUE.sql = db-install\Oracle19c\2-Table\02-UTIL_SYS_ETL_TASK_QUEUE.sql
+		db-install\Oracle19c\2-Table\03-UTIL_SYS_LAST_ACTIVE_STATUS.sql = db-install\Oracle19c\2-Table\03-UTIL_SYS_LAST_ACTIVE_STATUS.sql
+		db-install\Oracle19c\2-Table\04-UTIL_SYS_ETL_BATCH_STATUS_HIST.sql = db-install\Oracle19c\2-Table\04-UTIL_SYS_ETL_BATCH_STATUS_HIST.sql
+		db-install\Oracle19c\2-Table\05-UTIL_SYS_ETL_TASK_QUEUE_HIST.sql = db-install\Oracle19c\2-Table\05-UTIL_SYS_ETL_TASK_QUEUE_HIST.sql
+		db-install\Oracle19c\2-Table\06-TEMP_NUM_ID.sql = db-install\Oracle19c\2-Table\06-TEMP_NUM_ID.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3-View", "3-View", "{26942158-DE6F-40BA-BFB4-E63F87B1E9FD}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle19c\3-View\01-VIEW_UTIL_SYS_ETL_TASK_QUEUE.sql = db-install\Oracle19c\3-View\01-VIEW_UTIL_SYS_ETL_TASK_QUEUE.sql
+		db-install\Oracle19c\3-View\02-VIEW_UTIL_SYS_ETL_TASK_ALL.sql = db-install\Oracle19c\3-View\02-VIEW_UTIL_SYS_ETL_TASK_ALL.sql
+		db-install\Oracle19c\3-View\03-VIEW_UTIL_SYS_ETL_BATCH_STATUS.sql = db-install\Oracle19c\3-View\03-VIEW_UTIL_SYS_ETL_BATCH_STATUS.sql
+		db-install\Oracle19c\3-View\04-VIEW_UTIL_SYS_ETL_TASK_STATUS.sql = db-install\Oracle19c\3-View\04-VIEW_UTIL_SYS_ETL_TASK_STATUS.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "4-Package", "4-Package", "{04BE4ED3-B5A2-49B2-8069-4E885E3B7E5C}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle19c\4-Package\01-UTIL_SYS_ETL.pck = db-install\Oracle19c\4-Package\01-UTIL_SYS_ETL.pck
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "5-Trigger", "5-Trigger", "{92A7D3F9-2740-49C9-9126-929778AAD7E1}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle19c\5-Trigger\01-TRG_UTIL_SYS_ETL_TASK_QUEUE_TY.trg = db-install\Oracle19c\5-Trigger\01-TRG_UTIL_SYS_ETL_TASK_QUEUE_TY.trg
+		db-install\Oracle19c\5-Trigger\02-TRG_UTIL_SYS_ETL_TASK_QUEUE_JS.trg = db-install\Oracle19c\5-Trigger\02-TRG_UTIL_SYS_ETL_TASK_QUEUE_JS.trg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "6-Grant", "6-Grant", "{6B8AE89B-9465-477C-B39F-FEF6A8A844A0}"
+	ProjectSection(SolutionItems) = preProject
+		db-install\Oracle19c\6-Grant\01-grant.sql = db-install\Oracle19c\6-Grant\01-grant.sql
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +161,13 @@ Global
 		{87DD82FC-0B7E-46BC-B20D-ADB6AF578FC5} = {AAEFA47E-3091-45D6-9784-7824EFAC369F}
 		{70680FE7-37E3-4F84-BB4B-283732C13290} = {6F022974-841F-464E-B4FC-B7E41F0D81C1}
 		{2F99C23D-E3C7-4169-B6F9-E97B6A446DCE} = {54BAD69A-8B04-4E3F-BF19-B1C78FF9D041}
+		{0EB923F8-7E94-48B5-9398-3D8B5271B939} = {D7834531-AA1B-473D-A0B3-48334DC444F5}
+		{D229AD9D-27CB-47C0-9828-EBFEDB796575} = {0EB923F8-7E94-48B5-9398-3D8B5271B939}
+		{82DEACA0-2AF5-43F7-A8AE-3AACE42B6D73} = {0EB923F8-7E94-48B5-9398-3D8B5271B939}
+		{26942158-DE6F-40BA-BFB4-E63F87B1E9FD} = {0EB923F8-7E94-48B5-9398-3D8B5271B939}
+		{04BE4ED3-B5A2-49B2-8069-4E885E3B7E5C} = {0EB923F8-7E94-48B5-9398-3D8B5271B939}
+		{92A7D3F9-2740-49C9-9126-929778AAD7E1} = {0EB923F8-7E94-48B5-9398-3D8B5271B939}
+		{6B8AE89B-9465-477C-B39F-FEF6A8A844A0} = {0EB923F8-7E94-48B5-9398-3D8B5271B939}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9B1C7408-0F0F-4D3B-9219-7514E8646651}
