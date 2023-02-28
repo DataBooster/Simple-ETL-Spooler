@@ -14,7 +14,8 @@ CREATE OR REPLACE PACKAGE {Schema}.UTIL_SYS_ETL IS
 FUNCTION CREATE_BATCH
 (
     inComment           VARCHAR2    := NULL,
-    inScheduled_Time    DATE        := SYSDATE
+    inScheduled_Time    DATE        := SYSDATE,
+    inParent_Batch_ID   PLS_INTEGER := NULL
 )   RETURN SIMPLE_INTEGER;
 
 
@@ -60,8 +61,16 @@ FUNCTION START_SINGLE_TASK
     inLoad_Timeout      SIMPLE_INTEGER  := 1800,
     inComment           VARCHAR2    := NULL,
     inScheduled_Time    DATE        := SYSDATE,
+    inParent_Batch_ID   PLS_INTEGER := NULL,
     inTheUserName 	    VARCHAR2	:= SYS_CONTEXT('USERENV', 'OS_USER')
 )   RETURN SIMPLE_INTEGER;
+
+
+PROCEDURE RESCHEDULE_BATCH
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inScheduled_Time    DATE        := SYSDATE
+);
 
 
 PROCEDURE CANCEL_BATCH
@@ -122,13 +131,14 @@ cApp_Key_Etl  CONSTANT VARCHAR2(30)    := 'POLL_ETL_TASK_QUEUE';
 FUNCTION CREATE_BATCH
 (
     inComment           VARCHAR2    := NULL,
-    inScheduled_Time    DATE        := SYSDATE
+    inScheduled_Time    DATE        := SYSDATE,
+    inParent_Batch_ID   PLS_INTEGER := NULL
 )   RETURN SIMPLE_INTEGER
 IS
 tBatch_ID SIMPLE_INTEGER  := {Schema}.UTIL_SYS_ETL_BATCH_ID_SEQ.NEXTVAL;
 BEGIN
-    INSERT INTO {Schema}.UTIL_SYS_ETL_BATCH_STATUS (BATCH_ID, BATCH_COMMENT, SCHEDULED_TIME, BATCH_STATUS, TASKS_COUNT, SERIES_COUNT, ENTRY_TIME)
-    VALUES (tBatch_ID, inComment, NVL(inScheduled_Time, SYSDATE), 'DRAFTING', 0, 0, SYSDATE);
+    INSERT INTO {Schema}.UTIL_SYS_ETL_BATCH_STATUS (BATCH_ID, BATCH_COMMENT, SCHEDULED_TIME, BATCH_STATUS, TASKS_COUNT, SERIES_COUNT, ENTRY_TIME, PARENT_BATCH_ID)
+    VALUES (tBatch_ID, inComment, NVL(inScheduled_Time, SYSDATE), 'DRAFTING', 0, 0, SYSDATE, inParent_Batch_ID);
     COMMIT;
     RETURN tBatch_ID;
 END CREATE_BATCH;
@@ -257,7 +267,8 @@ BEGIN
             SERIES_COUNT,
             ENTRY_TIME,
             TRIGGERED_TIME,
-            COMPLETED_TIME
+            COMPLETED_TIME,
+            PARENT_BATCH_ID
         )
         SELECT
             b.BATCH_ID,
@@ -268,7 +279,8 @@ BEGIN
             b.SERIES_COUNT,
             b.ENTRY_TIME,
             b.TRIGGERED_TIME,
-            SYSDATE
+            SYSDATE,
+            b.PARENT_BATCH_ID
         FROM    {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
         WHERE   b.BATCH_ID  = inBatch_ID;
 
@@ -295,13 +307,14 @@ FUNCTION START_SINGLE_TASK
     inLoad_Timeout      SIMPLE_INTEGER  := 1800,
     inComment           VARCHAR2    := NULL,
     inScheduled_Time    DATE        := SYSDATE,
+    inParent_Batch_ID   PLS_INTEGER := NULL,
     inTheUserName 	    VARCHAR2	:= SYS_CONTEXT('USERENV', 'OS_USER')
 )   RETURN SIMPLE_INTEGER
 IS
 tBatch_ID   PLS_INTEGER;
 tTask_ID    PLS_INTEGER;
 BEGIN
-    tBatch_ID   := CREATE_BATCH(inComment => inComment, inScheduled_Time => inScheduled_Time);
+    tBatch_ID   := CREATE_BATCH(inComment => inComment, inScheduled_Time => inScheduled_Time, inParent_Batch_ID => inParent_Batch_ID);
     tTask_ID    := ADD_TASK(tBatch_ID, FALSE,
                     inEXTRACT_TYPE, 
                     inEXTRACT_SOURCE,
@@ -322,6 +335,21 @@ BEGIN
 END START_SINGLE_TASK;
 
 
+PROCEDURE RESCHEDULE_BATCH
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inScheduled_Time    DATE        := SYSDATE
+)   IS
+BEGIN
+    UPDATE  {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
+    SET     b.SCHEDULED_TIME    = inScheduled_Time
+    WHERE   b.BATCH_ID          = inBatch_ID
+        AND b.BATCH_STATUS      IN ('DRAFTING', 'READY_TO_RUN');
+
+    COMMIT;
+END RESCHEDULE_BATCH;
+
+
 PROCEDURE CANCEL_BATCH
 (
     inBatch_ID          SIMPLE_INTEGER
@@ -336,7 +364,8 @@ BEGIN
         SERIES_COUNT,
         ENTRY_TIME,
         TRIGGERED_TIME,
-        COMPLETED_TIME
+        COMPLETED_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         b.BATCH_ID,
@@ -347,7 +376,8 @@ BEGIN
         b.SERIES_COUNT,
         b.ENTRY_TIME,
         b.TRIGGERED_TIME,
-        SYSDATE
+        SYSDATE,
+        b.PARENT_BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
     WHERE
@@ -508,7 +538,8 @@ BEGIN
         SERIES_COUNT,
         ENTRY_TIME,
         TRIGGERED_TIME,
-        COMPLETED_TIME
+        COMPLETED_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         b.BATCH_ID,
@@ -519,7 +550,8 @@ BEGIN
         b.SERIES_COUNT,
         b.ENTRY_TIME,
         b.TRIGGERED_TIME,
-        SYSDATE
+        SYSDATE,
+        b.PARENT_BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
     WHERE
@@ -607,7 +639,8 @@ BEGIN
         BATCH_STATUS,
         TASKS_COUNT,
         SERIES_COUNT,
-        ENTRY_TIME
+        ENTRY_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         tBatch_ID,
@@ -616,7 +649,8 @@ BEGIN
         'DRAFTING'      AS BATCH_STATUS,
         TASKS_COUNT,
         SERIES_COUNT,
-        SYSDATE         AS ENTRY_TIME
+        SYSDATE         AS ENTRY_TIME,
+        h.BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS_HIST    h
     WHERE
@@ -700,7 +734,8 @@ BEGIN
         SERIES_COUNT,
         ENTRY_TIME,
         TRIGGERED_TIME,
-        COMPLETED_TIME
+        COMPLETED_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         b.BATCH_ID,
@@ -711,7 +746,8 @@ BEGIN
         b.SERIES_COUNT,
         b.ENTRY_TIME,
         b.TRIGGERED_TIME,
-        SYSDATE
+        SYSDATE,
+        b.PARENT_BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
         JOIN
