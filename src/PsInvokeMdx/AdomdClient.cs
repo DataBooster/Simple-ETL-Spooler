@@ -18,7 +18,7 @@ namespace DataBooster.PsInvokeMdx
 
         public AdomdClient(string connectionString)
         {
-            _connection = new AdomdConnection(connectionString);
+            _connection = string.IsNullOrWhiteSpace(connectionString) ? throw new ArgumentNullException(nameof(connectionString)) : new AdomdConnection(connectionString);
         }
 
         public void Enter()

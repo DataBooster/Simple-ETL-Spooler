@@ -3,6 +3,7 @@
 // Repository:	https://github.com/DataBooster/Simple-ETL-Spooler
 
 using System;
+using System.Text;
 using System.Timers;
 using System.Diagnostics;
 using DataBooster.PsInvokeDb.DataAccess;
@@ -93,12 +94,12 @@ namespace DataBooster.Simple_ETL_Spooler
             }
             catch (Exception err)
             {
-                string errMsg = err.Message;
-                if (err.InnerException != null && !string.IsNullOrEmpty(err.InnerException.Message))
-                    errMsg += "\n" + err.InnerException.Message;
+                StringBuilder errMsg = new StringBuilder("Polling tasks error:");
 
-                if (!string.IsNullOrWhiteSpace(errMsg))
-                    LogError(errMsg);
+                for (; err != null; err = err.InnerException)
+                    errMsg.Append($" [{err.GetType().Name}] {err.Message}");
+
+                LogError(errMsg.ToString());
             }
             finally
             {

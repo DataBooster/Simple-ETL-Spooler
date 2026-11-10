@@ -4,6 +4,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using CommandLine;
 using DataBooster.PsConvertToOracleInput;
 
@@ -44,19 +45,14 @@ namespace DataBooster.CmdConvertToOracleInput
                     Console.Out.WriteLine(Transformer.ToOracleInputJson(resultJson, o.ResultSet, mapJson, mergeJson, o.Override, o.Indent));
                     exitCode = 0;
                 }
-                catch (Exception e)
+                catch (Exception err)
                 {
-                    string errMsg = e.Message;
-                    if (e.InnerException != null && !string.IsNullOrEmpty(e.InnerException.Message))
-                        if (string.IsNullOrEmpty(errMsg))
-                            errMsg = e.InnerException.Message;
-                        else
-                            errMsg += e.InnerException.Message;
-                    if (string.IsNullOrWhiteSpace(errMsg))
-                        errMsg = e.ToString();
+                    StringBuilder errMsg = new StringBuilder();
 
-                    Console.Error.Write(e.GetType().Name + ": ");
-                    Console.Error.WriteLine(errMsg);
+                    for (; err != null; err = err.InnerException)
+                        errMsg.AppendLine($"[{err.GetType().Name}] {err.Message}");
+
+                    Console.Error.Write(errMsg.ToString());
                 }
             });
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // Repository:	https://github.com/DataBooster/Simple-ETL-Spooler
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -21,6 +22,9 @@ namespace DataBooster.Simple_ETL_Spooler
 
         public EtlBatch(Poller edbPoller, int batchID)
         {
+            if (edbPoller == null)
+                throw new ArgumentNullException(nameof(edbPoller));
+
             _edbPoller = edbPoller;
 
             _batchID = batchID;
@@ -35,6 +39,10 @@ namespace DataBooster.Simple_ETL_Spooler
             {
                 _tasks.Add(new List<EtlTask>());
                 _lastStepPlan = stepPlan;
+            }
+            else if (_tasks.Count == 0)
+            {
+                _tasks.Add(new List<EtlTask>());
             }
 
             _tasks[_tasks.Count - 1].Add(new EtlTask(taskID, extractType, extractSource, extractCommand, extractParams, extractTimeoutSeconds,

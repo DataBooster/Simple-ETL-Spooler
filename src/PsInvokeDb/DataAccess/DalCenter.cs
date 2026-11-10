@@ -35,6 +35,16 @@ namespace DataBooster.PsInvokeDb.DataAccess
             return AccessChannel.ExecuteStoredProcedure(req);
         }
 
+        internal StoredProcedureResponse ExecuteQuery(string queryText, IDictionary<string, object> parameters, int timeoutSeconds)
+        {
+            var req = new StoredProcedureRequest(queryText, parameters) { CommandType = CommandType.Text };
+
+            if (timeoutSeconds > 0)
+                req.CommandTimeout = timeoutSeconds;
+
+            return AccessChannel.ExecuteText(req);
+        }
+
         internal StoredProcedureResponse ExecuteProcedure(string commandText, IDictionary<string, object> parameters, int timeoutSeconds)
         {
             var req = new StoredProcedureRequest(commandText, parameters) { CommandType = CommandType.StoredProcedure };
@@ -70,7 +80,7 @@ namespace DataBooster.PsInvokeDb.DataAccess
                         break;
                 }
 
-                return (commandType == CommandType.Text) ? dal.ExecuteQuery(commandText, timeoutSeconds) : dal.ExecuteProcedure(commandText, parameters, timeoutSeconds);
+                return (commandType == CommandType.Text) ? dal.ExecuteQuery(commandText, parameters, timeoutSeconds) : dal.ExecuteProcedure(commandText, parameters, timeoutSeconds);
             }
         }
 

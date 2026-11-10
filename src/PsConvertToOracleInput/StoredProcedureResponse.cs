@@ -54,7 +54,7 @@ namespace DataBooster.PsConvertToOracleInput
                     }
                     else
                     {
-                        string json = JsonConvert.SerializeObject(inputObject);
+                        string json = JsonConvert.SerializeObject(inputObject, Formatting.None);
                         return JsonConvert.DeserializeObject<StoredProcedureResponse>(json) ?? new StoredProcedureResponse();
                     }
             }
