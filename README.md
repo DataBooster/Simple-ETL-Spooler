@@ -24,19 +24,20 @@ A typical use follows just three steps:
 Here is an example:
 ```sql
 DECLARE
-    v_batch_id  SIMPLE_INTEGER;
+    v_batch_id  PLS_INTEGER;
+    v_task_id   PLS_INTEGER;
 BEGIN
     v_batch_id := {Schema}.UTIL_SYS_ETL.CREATE_BATCH(
         inComment        => 'Demo: sync data from source to target',
         inScheduled_Time => SYSDATE
     );
-    {Schema}.UTIL_SYS_ETL.ADD_TASK(
+    v_task_id := {Schema}.UTIL_SYS_ETL.ADD_TASK(
         inBatch_ID         => v_batch_id,
         inSerially         => TRUE,
         inExtract_Type     => 'SQL',
         inExtract_Source   => 'SDBXYZ',
-        inExtract_Command  => 'select PORT_CODE, MARKET_VALUE from SOME_SOURCE where AS_OF_DATE = :AS_OF_DATE',
-        inExtract_Params   => '{"AS_OF_DATE":"2026-07-31"}',
+        inExtract_Command  => 'select PORT_CODE, MARKET_VALUE from SOME_SOURCE where AS_OF_DATE = :as_of_date',
+        inExtract_Params   => '{"as_of_date":"2026-07-31"}',
         inLoad_Type        => 'SP',
         inField_Mapping    => '{"PORT_CODE":"in_PORT_CODE","MARKET_VALUE":"in_MARKET_VALUE"}',
         inMerge_Params     => '{}',
