@@ -1,4 +1,6 @@
-﻿using System.ServiceProcess;
+﻿using System;
+using System.Threading;
+using System.ServiceProcess;
 
 namespace DataBooster.Simple_ETL_Spooler
 {
@@ -20,6 +22,16 @@ namespace DataBooster.Simple_ETL_Spooler
         protected override void OnStop()
         {
             _polling.Stop();
+        }
+
+        static public void DebugInteractive(TimeSpan duration)
+        {
+            using (var testService = new WindowsService())
+            {
+                testService.OnStart(new string[0]);
+                Thread.Sleep(duration);
+                testService.OnStop();
+            }
         }
     }
 }

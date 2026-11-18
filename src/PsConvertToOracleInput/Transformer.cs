@@ -6,9 +6,9 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Management.Automation;
 using System.ComponentModel;
-//using System.Text.Json;
+using System.Management.Automation;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace DataBooster.PsConvertToOracleInput
@@ -16,10 +16,16 @@ namespace DataBooster.PsConvertToOracleInput
     public static class Transformer
     {
         //static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { PropertyNameCaseInsensitive = true, AllowTrailingCommas = true, ReadCommentHandling = JsonCommentHandling.Skip };
+        private static readonly Regex _regexSingleJsonParamName = new Regex(@"^\w+$");
 
-        internal static string MustJson(string mayJson)
+        private static string MustJson(string mayJson)
         {
             return string.IsNullOrWhiteSpace(mayJson) ? "{}" : mayJson;
+        }
+
+        public static T DeserializeJson<T>(string strJson)
+        {
+            return JsonConvert.DeserializeObject<T>(MustJson(strJson));
         }
 
         internal static IDictionary<string, T> ToDict<T>(object inputObject, string argName)
@@ -34,7 +40,7 @@ namespace DataBooster.PsConvertToOracleInput
                 case IDictionary hashTable:
                     return hashTable.Cast<DictionaryEntry>().ToDictionary(x => (string)x.Key, x => (T)x.Value);
                 case string json:
-                    return JsonConvert.DeserializeObject<IDictionary<string, T>>(MustJson(json));
+                    return DeserializeJson<IDictionary<string, T>>(json) ?? new Dictionary<string, T>(0);
                 default:
                     if (inputObject == null)
                         return null;
@@ -67,6 +73,12 @@ namespace DataBooster.PsConvertToOracleInput
                 else
                     return columnName;
             }
+
+            if (spResponse == null)
+                throw new ArgumentNullException(nameof(spResponse));
+
+            if (resultSet < 0)
+                throw new ArgumentOutOfRangeException(nameof(resultSet));
 
             var toDict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             string paramName;
@@ -122,11 +134,14 @@ namespace DataBooster.PsConvertToOracleInput
 
         public static IDictionary<string, object> Merge(this IDictionary<string, object> baseDict, IDictionary<string, object> mergeDict, bool overrideMerge)
         {
-            foreach (var kv in mergeDict)
+            if (mergeDict != null)
             {
-                if ((overrideMerge && !string.IsNullOrWhiteSpace(kv.Key)) || !baseDict.ContainsKey(kv.Key))
+                foreach (var kv in mergeDict)
                 {
-                    baseDict[kv.Key] = kv.Value;
+                    if ((overrideMerge && !string.IsNullOrWhiteSpace(kv.Key)) || !baseDict.ContainsKey(kv.Key))
+                    {
+                        baseDict[kv.Key] = kv.Value;
+                    }
                 }
             }
 
@@ -143,7 +158,7 @@ namespace DataBooster.PsConvertToOracleInput
 
         public static string ToOracleInputJson(string inputJson, int resultSet, string mapJson, string mergeJson, bool overrideMerge, bool indent = false)
         {
-            var inputResult = JsonConvert.DeserializeObject<StoredProcedureResponse>(MustJson(inputJson)) ?? new StoredProcedureResponse();
+            var inputResult = DeserializeJson<StoredProcedureResponse>(inputJson) ?? new StoredProcedureResponse();
             var transformed = ConvertToOracleInput(inputResult, resultSet, mapJson, mergeJson, overrideMerge);
 
             return JsonConvert.SerializeObject(transformed, indent ? Formatting.Indented : Formatting.None);
@@ -153,16 +168,28 @@ namespace DataBooster.PsConvertToOracleInput
         {
             StoredProcedureResponse spResponse = StoredProcedureResponse.FromObject(sourceResponse);
             var mapDict = ConvertJsonToDict<string>(mapJson, true);
-            var mergeDict = JsonConvert.DeserializeObject<IDictionary<string, object>>(MustJson(mergeJson)) ?? new Dictionary<string, object>(0);
+            var mergeDict = DeserializeJson<IDictionary<string, object>>(mergeJson) ?? new Dictionary<string, object>(0);
             var transformed = spResponse.AsOracleInput(mapDict, resultSet).Merge(mergeDict, overrideMerge);
 
-            return transformed;
+            return transformed.EncapsulateIntoJsonParamIfRequired(mapDict);
         }
 
         public static IDictionary<string, T> ConvertJsonToDict<T>(string dictJson, bool ignoreCase = true)
         {
-            var dict = JsonConvert.DeserializeObject<IDictionary<string, T>>(MustJson(dictJson));
-            return ignoreCase ? dict.AsCaseInsensitive() : dict;
+            var dict = DeserializeJson<IDictionary<string, T>>(dictJson);
+            return ignoreCase ? dict.AsCaseInsensitive() : (dict ?? new Dictionary<string, T>(0));
+        }
+
+        public static IDictionary<string, object> EncapsulateIntoJsonParamIfRequired(this IDictionary<string, object> resultDict, IDictionary<string, string> mapDict)
+        {
+            if (mapDict != null && mapDict.TryGetValue("*", out string toJsonParamName) && _regexSingleJsonParamName.IsMatch(toJsonParamName))
+            {
+                string jsonText = JsonConvert.SerializeObject(resultDict, Formatting.None);
+                var encapsulatedDict = new Dictionary<string, object>(1, StringComparer.OrdinalIgnoreCase) { { toJsonParamName, jsonText } };
+                return encapsulatedDict;
+            }
+            else
+                return resultDict;
         }
     }
 }

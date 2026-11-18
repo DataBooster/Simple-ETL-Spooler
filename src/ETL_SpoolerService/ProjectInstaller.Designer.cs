@@ -38,7 +38,7 @@
             // 
             // serviceInstaller
             // 
-            this.serviceInstaller.Description = "Simple ETL Task Spooler Service - Reduce effort for ETL";
+            this.serviceInstaller.Description = "DataBooster Simple-ETL-Spooler Service - Automates the background execution of queued ETL tasks.";
             this.serviceInstaller.DisplayName = "Simple ETL Task Spooler Service";
             this.serviceInstaller.ServiceName = "Simple_ETL_Task_Spooler";
             this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;

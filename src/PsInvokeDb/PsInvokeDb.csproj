@@ -39,7 +39,7 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Oracle.DataAccess, Version=4.112.3.0, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=AMD64">
       <HintPath>..\packages\odp.net.x64.112.3.20\lib\net40\Oracle.DataAccess.dll</HintPath>
@@ -63,6 +63,7 @@
     <Compile Include="Customizer.cs" />
     <Compile Include="DataAccess\DalCenter.cs" />
     <Compile Include="DataAccess\DbCmd.cs" />
+    <Compile Include="DataAccess\NamedBindTextCommandExtensions.cs" />
     <Compile Include="DataAccess\Oracle.ODP\ConfigHelper.sample.cs" />
     <Compile Include="DataAccess\Oracle.ODP\DalCenter.partial.sample.cs" />
     <Compile Include="DataAccess\Oracle.ODP\DalCenter.sample.cs" />

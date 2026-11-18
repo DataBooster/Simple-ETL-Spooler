@@ -1,4 +1,4 @@
-BEGIN
+﻿BEGIN
 	EXECUTE IMMEDIATE 'DROP TABLE {Schema}.UTIL_SYS_ETL_TASK_QUEUE';
 EXCEPTION
 	WHEN OTHERS THEN
@@ -55,11 +55,11 @@ comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.step_plan
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.extract_type
   is 'The type of extraction source, currently supported: (''SP'', ''SQL'', ''MDX'', ''REST'')';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.extract_source
-  is 'The database server(instance) name of ''SP''/''SQL'', or the full connection string of ''MDX'', or the URL of ''REST''.';
+  is 'The database server name of ''SP''/''SQL'', or the full connection string of ''MDX'', or the URL of ''REST''.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.extract_command
-  is 'For ''SP'': The fully qualified name of the stored procedure; For ''SQL''/''MDX'': A complete dynamic query statement; For ''REST'': A complete JSON string as the HTTP body content to be sent to the RESTful service.';
+  is 'For ''SP'': The fully qualified name of the stored procedure; For ''SQL''/''MDX'': A complete dynamic query statement.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.extract_params
-  is 'For ''SP'': A valid JSON string containing all input parameters to be passed to the stored procedure; For ''REST'': A valid JSON string containing any custom HTTP headers (name-value pairs) - if need;';
+  is 'Only for ''SP'': A valid JSON string containing all input parameters to be passed to the stored procedure.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.RESULT_SET
   is 'Indicates which result-set (zero-based index) from the source needs to be loaded into the destination.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.naming_convention
@@ -67,10 +67,10 @@ comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.naming_convention
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.load_type
   is 'The type of load destination, currently supported: ''SP'' (Oracle only for now)';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.field_mapping
-  is 'A valid JSON string specifying some special name mapping between source columns and destination input parameters. All fields without specified custom name-mapping, will continue to be automatically matched by name (the column name in the extraction result set --> the parameter name in the load stored procedure).';
+  is 'A valid JSON string specifying some special name mapping between source columns and destination input parameters.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.merge_params
   is 'Any additional input parameters required by the destination SP can be entered in this JSON.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.load_destination
-  is 'The destination database server(instance) name.';
+  is 'The destination SP to store/process the result-set of source.';
 comment on column {Schema}.UTIL_SYS_ETL_TASK_QUEUE.load_command
   is 'The fully qualified name of the stored procedure for loading.';

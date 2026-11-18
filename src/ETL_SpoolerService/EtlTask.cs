@@ -5,14 +5,16 @@
 using System;
 using System.Data;
 using System.Linq;
-using System.Collections.Generic;
+using System.Text;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using DataBooster.PsInvokeDb;
-using DataBooster.PsInvokeMdx;
-using DataBooster.PsConvertToOracleInput;
+using System.Collections.Generic;
 using DataBooster.DbWebApi.Client;
+using DataBooster.PsConvertToOracleInput;
+using DataBooster.PsInvokeDb;
 using DataBooster.PsInvokeDb.DataAccess;
+using DataBooster.PsInvokeMdx;
+using DataBooster.Simple_ETL_Spooler.InvokeSnowflake;
 
 namespace DataBooster.Simple_ETL_Spooler
 {
@@ -32,34 +34,36 @@ namespace DataBooster.Simple_ETL_Spooler
         private readonly string _loadDestination;
         private readonly string _loadCommand;
         private readonly int _loadTimeoutSeconds;
-        private string _runtimeError;
+        private StringBuilder _runtimeError;
+        private bool _runCompleted;
 
         public int TaskID => _taskID;
-        public string RuntimeError => _runtimeError;
-        public bool IsCompleted => _runtimeError != null;
+        public string RuntimeError => _runtimeError.ToString();
+        public bool IsCompleted => _runCompleted || _runtimeError.Length > 0;
 
         public EtlTask(int taskID, string extractType, string extractSource, string extractCommand, string extractParams, int extractTimeoutSeconds, int extractResultSet,
             string namingConvention, string loadType, string fieldMapping, string mergeParams, string loadDestination, string loadCommand, int loadTimeoutSeconds)
         {
             _taskID = taskID;
-            _extractType = extractType.ToUpper();
+            _extractType = extractType?.ToUpper();
             _extractSource = extractSource;
             _extractCommand = extractCommand;
             _extractParams = extractParams;
             _extractTimeoutSeconds = extractTimeoutSeconds;
             _extractResultSet = extractResultSet;
             _namingConvention = namingConvention;
-            _loadType = loadType.ToUpper();
+            _loadType = loadType?.ToUpper();
             _fieldMapping = fieldMapping;
             _mergeParams = mergeParams;
             _loadDestination = loadDestination;
             _loadCommand = loadCommand;
             _loadTimeoutSeconds = loadTimeoutSeconds;
-            _runtimeError = null;
+            _runtimeError = new StringBuilder();
+            _runCompleted = false;
 
             if (_extractType != "SP" && _extractType != "SQL" && _extractType != "MDX" && _extractType != "REST")
                 AppendError($"'{_extractType}' ExtractType is not supported!");
-            if (_loadType != "SP")
+            if (_loadType != "SP" && _loadType != "SQL")
                 AppendError($"'{_loadType}' LoadType is not supported!");
         }
 
@@ -67,16 +71,18 @@ namespace DataBooster.Simple_ETL_Spooler
         {
             if (errorMsg == null)
                 return;
-            if (_runtimeError == null)
-                _runtimeError = errorMsg;
-            else
-                _runtimeError += "\n" + errorMsg;
+            if (_runtimeError.Length > 0)
+                _runtimeError.AppendLine();
+            _runtimeError.Append(errorMsg);
         }
 
         public void Run()
         {
             if (IsCompleted)
                 return;
+
+            string runningStage = "Extracting";
+            bool isSfSource = false;
 
             try
             {
@@ -86,11 +92,24 @@ namespace DataBooster.Simple_ETL_Spooler
                 {
                     case "SP":
                         extractResult = Poller.Execute(dbServer: _extractSource, commandText: _extractCommand, commandType: CommandType.StoredProcedure,
-                            parameters: InvokeDbCmdlet.ToDict(_extractParams, "extractParams", _extractCommand), namingConvention: _namingConvention, timeoutSeconds: _extractTimeoutSeconds);
+                            parameters: Transformer.ConvertJsonToDict<object>(_extractParams, true),
+                            namingConvention: _namingConvention, timeoutSeconds: _extractTimeoutSeconds);
                         break;
                     case "SQL":
-                        extractResult = Poller.Execute(dbServer: _extractSource, commandText: _extractCommand, commandType: CommandType.Text,
-                            parameters: null, namingConvention: _namingConvention, timeoutSeconds: _extractTimeoutSeconds);
+                        isSfSource = SnowflakeClient.IsSnowflake(_extractSource);
+                        if (isSfSource)     // For Snowflake source, execute the SQL text directly and reshape the result into an Oracle-parameter-like dictionary. Here may need to be extended for other data sources in the future.
+                            extractResult = SnowflakeClient.Execute(
+                                configServer: ConfigHelper.MainDB,
+                                configJson: _extractSource,
+                                sfQuery: _extractCommand,
+                                bindParams: _extractParams,
+                                timeoutSeconds: _extractTimeoutSeconds,
+                                mapJson: _fieldMapping,
+                                mergeJson: _mergeParams);
+                        else                // For Oracle or SQL Server source, execute the SQL text with named bind parameters and get the result as a more flexible dictionary.
+                            extractResult = Poller.Execute(dbServer: _extractSource, commandText: _extractCommand, commandType: CommandType.Text,
+                                parameters: Transformer.ConvertJsonToDict<object>(_extractParams, true),
+                                namingConvention: _namingConvention, timeoutSeconds: _extractTimeoutSeconds);
                         break;
                     case "MDX":
                         using (AdomdClient mdx = new AdomdClient(_extractSource))
@@ -108,9 +127,10 @@ namespace DataBooster.Simple_ETL_Spooler
                         break;
                 }
 
-                if (extractResult != null && _loadType == "SP")
+                if (extractResult != null && (_loadType == "SP" || _loadType == "SQL"))
                 {
                     IDictionary<string, object> loadInput;
+                    runningStage = "Loading";
 
                     if (_extractType == "REST")
                     {
@@ -121,22 +141,40 @@ namespace DataBooster.Simple_ETL_Spooler
                         if (!string.IsNullOrEmpty(jsonInputParamName) && !loadInput.ContainsKey(jsonInputParamName))
                             loadInput.Add(jsonInputParamName, extractResult);
                     }
+                    else if (isSfSource)
+                    {
+                        loadInput = extractResult;  // The extractResult is already an Oracle-parameter-like dictionary
+                    }
                     else
                     {
                         loadInput = Transformer.ConvertToOracleInput(extractResult, _extractResultSet, _fieldMapping, _mergeParams, true);
                     }
 
-                    var loadResult = Poller.Execute(dbServer: _loadDestination, commandText: _loadCommand, commandType: CommandType.StoredProcedure,
+                    if (SnowflakeClient.IsSnowflake(_loadDestination))  // For Snowflake destination, always execute the load command as SQL text with bind parameters, even when LoadType is entered as SP.
+                    {                                                   // The load command therefore must be a full executable SQL/CALL/script block, and any array/complex values in loadInput are passed as JSON text.
+                        var loadResult = SnowflakeClient.Execute(
+                            configServer: ConfigHelper.MainDB,
+                            configJson: _loadDestination,
+                            sfQuery: _loadCommand,
+                            bindParams: loadInput,
+                            timeoutSeconds: _loadTimeoutSeconds);
+                    }
+                    else    // For Oracle destinations, keep using the original CommandType-based execution path.
+                    {
+                        var loadResult = Poller.Execute(dbServer: _loadDestination, commandText: _loadCommand,
+                            commandType: _loadType == "SQL" ? CommandType.Text : CommandType.StoredProcedure,
                             parameters: loadInput, namingConvention: _namingConvention, timeoutSeconds: _loadTimeoutSeconds);
+                    }
                 }
 
-                _runtimeError = string.Empty;
+                _runtimeError.Clear();
+                _runCompleted = true;
             }
             catch (Exception err)
             {
-                AppendError($"{err.GetType().Name}: {err.Message}");
-                if (err.InnerException != null)
-                    AppendError($"\t{err.InnerException.GetType().Name}: {err.InnerException.Message}");
+                AppendError($"{runningStage} Error:");
+                for (; err != null; err = err.InnerException)
+                    AppendError($" [{err.GetType().Name}] {err.Message}");
             }
         }
 

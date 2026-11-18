@@ -9,6 +9,9 @@ namespace DataBooster.Simple_ETL_Spooler
         private const string _packageSettingKey = "MainPackage";
         private const string _intervalSecondsSettingKey = "IntervalSeconds";
         private const string _stopSerialOnErrorSettingKey = "StopSerialOnError";
+        private const string _OracleServerNamePatternKey = "OracleServerNamePattern";
+        private const string _SnowflakeRetryDelaySecondsKey = "SnowflakeRetryDelaySeconds";
+        private const string _SnowflakePATCacheHoursKey = "SnowflakePATCacheHours";
 
         private static readonly string _mainDB;
         private static readonly string _mainPackage;
@@ -26,6 +29,10 @@ namespace DataBooster.Simple_ETL_Spooler
                 throw new MissingFieldException($"{_serverSettingKey} is missing from appSettings of App.config.");
             if (string.IsNullOrWhiteSpace(_packageSettingKey))
                 throw new MissingFieldException($"{_packageSettingKey} is missing from appSettings of App.config.");
+
+            PsInvokeDb.Customizer.OracleServerNamePattern = ConfigurationManager.AppSettings[_OracleServerNamePatternKey];
+            InvokeSnowflake.SnowflakeConfig.RetryDelay = TimeSpan.FromSeconds(int.Parse(ConfigurationManager.AppSettings[_SnowflakeRetryDelaySecondsKey] ?? "10"));
+            InvokeSnowflake.SnowflakeConfig.CacheExpiration = TimeSpan.FromHours(int.Parse(ConfigurationManager.AppSettings[_SnowflakePATCacheHoursKey] ?? "12"));
         }
 
         public static string MainDB => _mainDB;

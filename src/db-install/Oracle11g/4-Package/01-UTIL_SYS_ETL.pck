@@ -1,4 +1,4 @@
-CREATE OR REPLACE PACKAGE {Schema}.UTIL_SYS_ETL IS
+﻿CREATE OR REPLACE PACKAGE {Schema}.UTIL_SYS_ETL IS
 
 
   -- Simple ETL Spooler task processing
@@ -13,8 +13,10 @@ CREATE OR REPLACE PACKAGE {Schema}.UTIL_SYS_ETL IS
 
 FUNCTION CREATE_BATCH
 (
+    inLog_Batch_ID      PLS_INTEGER := NULL,
     inComment           VARCHAR2    := NULL,
-    inScheduled_Time    DATE        := SYSDATE
+    inScheduled_Time    DATE        := SYSDATE,
+    inParent_Batch_ID   PLS_INTEGER := NULL
 )   RETURN SIMPLE_INTEGER;
 
 
@@ -35,8 +37,8 @@ FUNCTION ADD_TASK
     inLoad_Timeout      SIMPLE_INTEGER  := 1800,
     inTask_Comment      VARCHAR2,
     inStep_Plan         VARCHAR2    := NULL,
-    inTheUserName 	    VARCHAR2	:= SYS_CONTEXT('USERENV', 'OS_USER')
-)	RETURN SIMPLE_INTEGER;
+    inClientUserName    VARCHAR2    := SYS_CONTEXT('USERENV', 'OS_USER')
+)    RETURN SIMPLE_INTEGER;
 
 
 PROCEDURE START_BATCH
@@ -60,8 +62,16 @@ FUNCTION START_SINGLE_TASK
     inLoad_Timeout      SIMPLE_INTEGER  := 1800,
     inComment           VARCHAR2    := NULL,
     inScheduled_Time    DATE        := SYSDATE,
-    inTheUserName 	    VARCHAR2	:= SYS_CONTEXT('USERENV', 'OS_USER')
+    inParent_Batch_ID   PLS_INTEGER := NULL,
+    inClientUserName    VARCHAR2    := SYS_CONTEXT('USERENV', 'OS_USER')
 )   RETURN SIMPLE_INTEGER;
+
+
+PROCEDURE RESCHEDULE_BATCH
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inScheduled_Time    DATE        := SYSDATE
+);
 
 
 PROCEDURE CANCEL_BATCH
@@ -101,6 +111,28 @@ PROCEDURE CLEAN_UP
 );
 
 
+FUNCTION GET_BATCH_STATUS
+(
+    inBatch_ID  SIMPLE_INTEGER
+)   RETURN VARCHAR2;
+
+
+FUNCTION WAIT_BATCH
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inTimeout_Minutes   SIMPLE_INTEGER  := 360,
+    inTimeslice_Seconds SIMPLE_INTEGER  := 3
+)   RETURN VARCHAR2;
+
+
+PROCEDURE CHECK_COMPLETION
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inTimeout_Minutes   SIMPLE_INTEGER  := 240,
+    inTimeslice_Seconds SIMPLE_INTEGER  := 3
+);
+
+
 END UTIL_SYS_ETL;
 /
 CREATE OR REPLACE PACKAGE BODY {Schema}.UTIL_SYS_ETL IS
@@ -121,14 +153,16 @@ cApp_Key_Etl  CONSTANT VARCHAR2(30)    := 'POLL_ETL_TASK_QUEUE';
 
 FUNCTION CREATE_BATCH
 (
+    inLog_Batch_ID      PLS_INTEGER := NULL,
     inComment           VARCHAR2    := NULL,
-    inScheduled_Time    DATE        := SYSDATE
+    inScheduled_Time    DATE        := SYSDATE,
+    inParent_Batch_ID   PLS_INTEGER := NULL
 )   RETURN SIMPLE_INTEGER
 IS
-tBatch_ID SIMPLE_INTEGER  := {Schema}.UTIL_SYS_ETL_BATCH_ID_SEQ.NEXTVAL;
+tBatch_ID SIMPLE_INTEGER  := NVL(inLog_Batch_ID, {Schema}.UTIL_LOG_BATCH_ID_SEQ.NEXTVAL);
 BEGIN
-    INSERT INTO {Schema}.UTIL_SYS_ETL_BATCH_STATUS (BATCH_ID, BATCH_COMMENT, SCHEDULED_TIME, BATCH_STATUS, TASKS_COUNT, SERIES_COUNT, ENTRY_TIME)
-    VALUES (tBatch_ID, inComment, NVL(inScheduled_Time, SYSDATE), 'DRAFTING', 0, 0, SYSDATE);
+    INSERT INTO {Schema}.UTIL_SYS_ETL_BATCH_STATUS (BATCH_ID, BATCH_COMMENT, SCHEDULED_TIME, BATCH_STATUS, TASKS_COUNT, SERIES_COUNT, ENTRY_TIME, PARENT_BATCH_ID)
+    VALUES (tBatch_ID, inComment, NVL(inScheduled_Time, SYSDATE), 'DRAFTING', 0, 0, SYSDATE, inParent_Batch_ID);
     COMMIT;
     RETURN tBatch_ID;
 END CREATE_BATCH;
@@ -151,8 +185,8 @@ FUNCTION ADD_TASK
     inLoad_Timeout      SIMPLE_INTEGER  := 1800,
     inTask_Comment      VARCHAR2,
     inStep_Plan         VARCHAR2    := NULL,
-    inTheUserName 	    VARCHAR2	:= SYS_CONTEXT('USERENV', 'OS_USER')
-)	RETURN SIMPLE_INTEGER
+    inClientUserName    VARCHAR2    := SYS_CONTEXT('USERENV', 'OS_USER')
+)    RETURN SIMPLE_INTEGER
 IS
 tExtract_Type   VARCHAR2(32)    := UPPER(TRIM(inEXTRACT_TYPE));
 tLoad_Type      VARCHAR2(32)    := UPPER(TRIM(inLOAD_TYPE));
@@ -161,10 +195,10 @@ tSeries_Count   PLS_INTEGER;
 tTask_ID        SIMPLE_INTEGER  := {Schema}.UTIL_SYS_ETL_TASK_ID_SEQ.NEXTVAL;
 BEGIN
     IF tExtract_Type NOT IN ('SP', 'SQL', 'MDX', 'REST') THEN
-		RAISE_APPLICATION_ERROR(-20081, 'inEXTRACT_TYPE: "' || inEXTRACT_TYPE || '" is not a supported extraction type, currently only "SP","SQL","MDX","REST" are supported.');
+        RAISE_APPLICATION_ERROR(-20081, 'inEXTRACT_TYPE: "' || inEXTRACT_TYPE || '" is not a supported extraction type, currently only "SP","SQL","MDX","REST" are supported.');
     END IF;
     IF tLoad_Type NOT IN ('SP') THEN
-		RAISE_APPLICATION_ERROR(-20082, 'inLOAD_TYPE: "' || inLOAD_TYPE || '" is not a supported load type, currently only "SP" is supported.');
+        RAISE_APPLICATION_ERROR(-20082, 'inLOAD_TYPE: "' || inLOAD_TYPE || '" is not a supported load type, currently only "SP" is supported.');
     END IF;
 
     SELECT  b.SERIES_COUNT  INTO tSeries_Count
@@ -217,8 +251,8 @@ BEGIN
         inLOAD_DESTINATION,
         inLOAD_COMMAND,
         inLoad_Timeout,
-        inTASK_COMMENT, 
-        inTheUserName ,
+        inTASK_COMMENT,
+        inClientUserName,
         SYSDATE
     );
 
@@ -244,7 +278,7 @@ BEGIN
     RETURNING b.TASKS_COUNT INTO tTasks_Count;
 
     IF SQL%NOTFOUND THEN
-		RAISE_APPLICATION_ERROR(-20084, TO_CHAR(inBatch_ID) || ' is not a valid Batch_ID ready to run.');
+        RAISE_APPLICATION_ERROR(-20084, TO_CHAR(inBatch_ID) || ' is not a valid Batch_ID ready to run.');
     END IF;
 
     IF tTasks_Count = 0 THEN
@@ -257,7 +291,8 @@ BEGIN
             SERIES_COUNT,
             ENTRY_TIME,
             TRIGGERED_TIME,
-            COMPLETED_TIME
+            COMPLETED_TIME,
+            PARENT_BATCH_ID
         )
         SELECT
             b.BATCH_ID,
@@ -268,7 +303,8 @@ BEGIN
             b.SERIES_COUNT,
             b.ENTRY_TIME,
             b.TRIGGERED_TIME,
-            SYSDATE
+            SYSDATE,
+            b.PARENT_BATCH_ID
         FROM    {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
         WHERE   b.BATCH_ID  = inBatch_ID;
 
@@ -295,15 +331,16 @@ FUNCTION START_SINGLE_TASK
     inLoad_Timeout      SIMPLE_INTEGER  := 1800,
     inComment           VARCHAR2    := NULL,
     inScheduled_Time    DATE        := SYSDATE,
-    inTheUserName 	    VARCHAR2	:= SYS_CONTEXT('USERENV', 'OS_USER')
+    inParent_Batch_ID   PLS_INTEGER := NULL,
+    inClientUserName    VARCHAR2    := SYS_CONTEXT('USERENV', 'OS_USER')
 )   RETURN SIMPLE_INTEGER
 IS
 tBatch_ID   PLS_INTEGER;
 tTask_ID    PLS_INTEGER;
 BEGIN
-    tBatch_ID   := CREATE_BATCH(inComment => inComment, inScheduled_Time => inScheduled_Time);
+    tBatch_ID   := CREATE_BATCH(inComment => inComment, inScheduled_Time => inScheduled_Time, inParent_Batch_ID => inParent_Batch_ID);
     tTask_ID    := ADD_TASK(tBatch_ID, FALSE,
-                    inEXTRACT_TYPE, 
+                    inEXTRACT_TYPE,
                     inEXTRACT_SOURCE,
                     inEXTRACT_COMMAND,
                     inEXTRACT_PARAMS,
@@ -316,10 +353,25 @@ BEGIN
                     inLoad_Timeout,
                     inComment,
                     '.',
-                    inTheUserName );
+                    inClientUserName);
     START_BATCH(tBatch_ID);
     RETURN tBatch_ID;
 END START_SINGLE_TASK;
+
+
+PROCEDURE RESCHEDULE_BATCH
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inScheduled_Time    DATE        := SYSDATE
+)   IS
+BEGIN
+    UPDATE  {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
+    SET     b.SCHEDULED_TIME    = inScheduled_Time
+    WHERE   b.BATCH_ID          = inBatch_ID
+        AND b.BATCH_STATUS      IN ('DRAFTING', 'READY_TO_RUN');
+
+    COMMIT;
+END RESCHEDULE_BATCH;
 
 
 PROCEDURE CANCEL_BATCH
@@ -336,7 +388,8 @@ BEGIN
         SERIES_COUNT,
         ENTRY_TIME,
         TRIGGERED_TIME,
-        COMPLETED_TIME
+        COMPLETED_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         b.BATCH_ID,
@@ -347,7 +400,8 @@ BEGIN
         b.SERIES_COUNT,
         b.ENTRY_TIME,
         b.TRIGGERED_TIME,
-        SYSDATE
+        SYSDATE,
+        b.PARENT_BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
     WHERE
@@ -482,7 +536,7 @@ PROCEDURE END_TASK
 BEGIN
     UPDATE  {Schema}.UTIL_SYS_ETL_TASK_QUEUE t
     SET     t.COMPLETED_TIME    = SYSDATE,
-            t.RUNTIME_ERROR     = inRuntime_Error
+            t.RUNTIME_ERROR     = SUBSTR(inRuntime_Error, 1, 4000)
     WHERE   t.TASK_ID           = inTask_ID;
 
     COMMIT;
@@ -508,7 +562,8 @@ BEGIN
         SERIES_COUNT,
         ENTRY_TIME,
         TRIGGERED_TIME,
-        COMPLETED_TIME
+        COMPLETED_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         b.BATCH_ID,
@@ -519,7 +574,8 @@ BEGIN
         b.SERIES_COUNT,
         b.ENTRY_TIME,
         b.TRIGGERED_TIME,
-        SYSDATE
+        SYSDATE,
+        b.PARENT_BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
     WHERE
@@ -598,7 +654,7 @@ FUNCTION RERUN_BATCH
     inBatch_ID  SIMPLE_INTEGER
 )   RETURN SIMPLE_INTEGER
 IS
-tBatch_ID SIMPLE_INTEGER  := {Schema}.UTIL_SYS_ETL_BATCH_ID_SEQ.NEXTVAL;
+tBatch_ID SIMPLE_INTEGER  := {Schema}.UTIL_LOG_BATCH_ID_SEQ.NEXTVAL;
 BEGIN
     INSERT INTO {Schema}.UTIL_SYS_ETL_BATCH_STATUS (
         BATCH_ID,
@@ -607,7 +663,8 @@ BEGIN
         BATCH_STATUS,
         TASKS_COUNT,
         SERIES_COUNT,
-        ENTRY_TIME
+        ENTRY_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         tBatch_ID,
@@ -616,7 +673,8 @@ BEGIN
         'DRAFTING'      AS BATCH_STATUS,
         TASKS_COUNT,
         SERIES_COUNT,
-        SYSDATE         AS ENTRY_TIME
+        SYSDATE         AS ENTRY_TIME,
+        h.BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS_HIST    h
     WHERE
@@ -700,7 +758,8 @@ BEGIN
         SERIES_COUNT,
         ENTRY_TIME,
         TRIGGERED_TIME,
-        COMPLETED_TIME
+        COMPLETED_TIME,
+        PARENT_BATCH_ID
     )
     SELECT
         b.BATCH_ID,
@@ -711,7 +770,8 @@ BEGIN
         b.SERIES_COUNT,
         b.ENTRY_TIME,
         b.TRIGGERED_TIME,
-        SYSDATE
+        SYSDATE,
+        b.PARENT_BATCH_ID
     FROM
         {Schema}.UTIL_SYS_ETL_BATCH_STATUS   b
         JOIN
@@ -765,7 +825,7 @@ BEGIN
         t.TASK_COMMENT,
         t.CLIENT_ACCOUNT,
         t.ENTRY_TIME,
-        t.COMPLETED_TIME,
+        NVL(t.COMPLETED_TIME, SYSDATE)  AS COMPLETED_TIME,
         NVL(t.RUNTIME_ERROR, 'Zombie')  AS RUNTIME_ERROR
     FROM
         {Schema}.UTIL_SYS_ETL_TASK_QUEUE     t
@@ -783,6 +843,72 @@ BEGIN
 
     COMMIT;
 END CLEAN_UP;
+
+
+FUNCTION GET_BATCH_STATUS
+(
+    inBatch_ID  SIMPLE_INTEGER
+)   RETURN VARCHAR2
+IS
+tCurrent_Status VARCHAR2(30);
+BEGIN
+    SELECT MAX(b.BATCH_STATUS) INTO tCurrent_Status FROM {Schema}.UTIL_SYS_ETL_BATCH_STATUS b WHERE b.BATCH_ID = inBatch_ID;
+
+    IF tCurrent_Status IS NOT NULL THEN
+        RETURN tCurrent_Status;
+    END IF;
+
+    SELECT MAX(h.BATCH_STATUS) INTO tCurrent_Status FROM {Schema}.UTIL_SYS_ETL_BATCH_STATUS_HIST h WHERE h.BATCH_ID = inBatch_ID;
+
+    RETURN NVL(tCurrent_Status, 'NOT_FOUND');
+END GET_BATCH_STATUS;
+
+
+FUNCTION WAIT_BATCH
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inTimeout_Minutes   SIMPLE_INTEGER  := 360,
+    inTimeslice_Seconds SIMPLE_INTEGER  := 3
+)   RETURN VARCHAR2
+IS
+tWait_Until     TIMESTAMP(3)    := SYSTIMESTAMP + NUMTODSINTERVAL(inTimeout_Minutes, 'MINUTE');
+tTime_Slice     PLS_INTEGER;
+tCurrent_Status VARCHAR2(30);
+BEGIN
+    IF inTimeslice_Seconds > 1 THEN
+        tTime_Slice := inTimeslice_Seconds;
+    ELSE
+        tTime_Slice := 1;
+    END IF;
+
+    LOOP
+        tCurrent_Status := GET_BATCH_STATUS(inBatch_ID);
+
+        IF tCurrent_Status IN ('DRAFTING', 'READY_TO_RUN', 'RUNNING') AND SYSTIMESTAMP < tWait_Until THEN
+            DBMS_SESSION.SLEEP(tTime_Slice);
+        ELSE
+            RETURN tCurrent_Status;
+        END IF;
+    END LOOP;
+END WAIT_BATCH;
+
+
+PROCEDURE CHECK_COMPLETION
+(
+    inBatch_ID          SIMPLE_INTEGER,
+    inTimeout_Minutes   SIMPLE_INTEGER  := 240,
+    inTimeslice_Seconds SIMPLE_INTEGER  := 3
+)   IS
+tResult_Status  VARCHAR2(30);
+BEGIN
+    tResult_Status  := WAIT_BATCH(inBatch_ID => inBatch_ID, inTimeout_Minutes => inTimeout_Minutes, inTimeslice_Seconds => inTimeslice_Seconds);
+
+    IF tResult_Status <> 'COMPLETED' THEN
+        RAISE_APPLICATION_ERROR(-20085, tResult_Status || ' - please check:
+SELECT * FROM {Schema}.VIEW_UTIL_SYS_ETL_BATCH_STATUS WHERE BATCH_ID = ' || TO_CHAR(inBatch_ID) || ';
+SELECT * FROM {Schema}.VIEW_UTIL_SYS_ETL_TASK_STATUS WHERE BATCH_ID = ' || TO_CHAR(inBatch_ID) || ' ORDER BY TASK_ID;');
+    END IF;
+END CHECK_COMPLETION;
 
 
 END UTIL_SYS_ETL;

@@ -1,4 +1,5 @@
-﻿using System.ServiceProcess;
+﻿using System;
+using System.ServiceProcess;
 
 namespace DataBooster.Simple_ETL_Spooler
 {
@@ -9,12 +10,16 @@ namespace DataBooster.Simple_ETL_Spooler
         /// </summary>
         static void Main()
         {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
+            if (Environment.UserInteractive)
             {
-                new WindowsService()
-            };
-            ServiceBase.Run(ServicesToRun);
+                WindowsService.DebugInteractive(TimeSpan.FromMinutes(10));
+            }
+            else
+            {
+                ServiceBase[] ServicesToRun;
+                ServicesToRun = new ServiceBase[] { new WindowsService() };
+                ServiceBase.Run(ServicesToRun);
+            }
         }
     }
 }
